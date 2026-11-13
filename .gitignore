@@ -1,0 +1,10 @@
+*:Zone.Identifier
+.DS_Store
+__pycache__/
+*.pyc
+# read items are kept on disk, not in git: only the READMEs are kept
+*
+!*/
+!README.md
+!**/README.md
+!.gitignore
