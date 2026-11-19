@@ -8,3 +8,6 @@ __pycache__/
 !README.md
 !**/README.md
 !.gitignore
+
+# third-party copies and old read items stay on disk
+/Read/
