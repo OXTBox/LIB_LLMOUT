@@ -8,3 +8,7 @@ layout. Kept for reference, outside every git repo; never deleted. (Moved into `
 Where the work went: each project's own docs (for example `LIB_GAMES/Vibecode3D_Games/Thrmnlra/DESIGN.md`
 for `Read/LIB_GAMES/games_to_Make_input.txt`; harvests of `Read/LIB_XTJSON/` stacks are in
 `~/projects/XTJSON/batch/`).
+
+## Licence
+
+MIT (see `LICENSE`), Copyright (c) 2026 xAction.
