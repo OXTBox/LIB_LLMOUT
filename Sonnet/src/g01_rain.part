@@ -1,0 +1,166 @@
+------------------------------------------------------------------------------------
+-- 1  NONSENSE RAIN  (Probe vs Cone)   rung 1: one axis, one rule
+-- The Cone rains code. Cubes are valid: catch them. Cones are nonsense: dodge them.
+-- Some tokens re-parse on the way down: they flash white, then become the other kind.
+-- LEFT RIGHT slide the Probe.  Catch 20 valid tokens; three nonsense hits end it.
+------------------------------------------------------------------------------------
+local sRnPX, sRnPlayer, sRnTok, sRnN, sRnCaught, sRnLives, sRnTicks, sRnState, sRnMsg, sRnClock
+constant kRnNeed = 20
+
+on Rain.Start
+   Mesh.Define "Rain.Probe", Mesh.Box(70, 12, 12)
+   Mesh.Define "Rain.Valid", Mesh.Box(26, 26, 26)
+   Mesh.Define "Rain.Nonsense", Mesh.Pyramid(5, 18, 34)
+   put 0 into sRnPX
+   put Entity.Spawn("Rain.Probe", 0, kB - 30, kZ, "cyan") into sRnPlayer
+   put empty into sRnTok
+   put 0 into sRnN
+   put 0 into sRnCaught
+   put 3 into sRnLives
+   put 0 into sRnTicks
+   put 0 into sRnClock
+   put "play" into sRnState
+   put empty into sRnMsg
+   Rain.Hud
+end Rain.Start
+
+on Rain.Hud
+   Arc.Line "Rain.Title", "NONSENSE RAIN", 0, 18
+   Arc.Line "Rain.Score", "VALID" && sRnCaught & "/" & kRnNeed && "  LIVES" && sRnLives, 1, 14
+   Arc.Line "Rain.Msg", sRnMsg, 2, 14
+   Arc.Help "LEFT RIGHT: SLIDE.  CUBES GOOD, CONES BAD.  WHITE FLASH: RE-PARSE.  M: MENU"
+end Rain.Hud
+
+on Rain.Step
+   local i, tGap, tType, tVY
+   if sRnState is not "play" then
+      if Arc.Pressed(32) then Arc.Again "Rain"
+      exit Rain.Step
+   end if
+   add 1 to sRnTicks
+   if Arc.Held(65361) then subtract 9 from sRnPX
+   if Arc.Held(65363) then add 9 to sRnPX
+   put Arc.Clamp(sRnPX, kL + 40, kR - 40) into sRnPX
+   Entity.SetPosition sRnPlayer, sRnPX, kB - 30, kZ
+   -- a new token: faster and meaner the more you have caught
+   put max(9, 32 - sRnCaught) into tGap
+   add 1 to sRnClock
+   if sRnClock >= tGap then
+      put 0 into sRnClock
+      Rain.Spawn
+   end if
+   repeat with i = sRnN down to 1
+      add sRnTok[i]["vy"] to sRnTok[i]["y"]
+      -- re-parse: a tell (white), then the other kind
+      if sRnTok[i]["flipAt"] is not empty and sRnTok[i]["y"] >= sRnTok[i]["flipAt"] then
+         Rain.Reparse i
+      end if
+      if sRnTok[i]["tell"] > 0 then
+         subtract 1 from sRnTok[i]["tell"]
+         if sRnTok[i]["tell"] is 0 then Rain.Flip i
+      end if
+      Entity.SetPosition sRnTok[i]["id"], sRnTok[i]["x"], sRnTok[i]["y"], kZ
+      Entity.SetRotation sRnTok[i]["id"], 0, sRnTicks * 0.05, 0
+      if sRnTok[i]["y"] >= kB - 46 and sRnTok[i]["y"] <= kB - 14 and abs(sRnTok[i]["x"] - sRnPX) < 48 then
+         Rain.Catch i
+      else if sRnTok[i]["y"] > kB + 20 then
+         Rain.Drop i
+      end if
+   end repeat
+   if sRnCaught >= kRnNeed then
+      put "CODE CLEAN.  SPACE TO RAIN AGAIN" into sRnMsg
+      put "won" into sRnState
+      Arc.Won 1
+   else if sRnLives <= 0 then
+      put "TOO MUCH NONSENSE.  SPACE TO TRY AGAIN" into sRnMsg
+      put "lost" into sRnState
+   end if
+   Rain.Hud
+end Rain.Step
+
+on Rain.Spawn
+   local tType, tFlip
+   put "valid" into tType
+   if random(100) <= min(70, 34 + sRnCaught) then put "nonsense" into tType
+   add 1 to sRnN
+   put empty into sRnTok[sRnN]
+   put tType into sRnTok[sRnN]["type"]
+   put kL + 30 + random(kR - kL - 60) into sRnTok[sRnN]["x"]
+   put kT into sRnTok[sRnN]["y"]
+   put 3 + random(3) * 0.4 + sRnCaught * 0.1 into sRnTok[sRnN]["vy"]
+   put 0 into sRnTok[sRnN]["tell"]
+   put empty into sRnTok[sRnN]["flipAt"]
+   if random(100) <= 30 then put (random(120) - 60) into sRnTok[sRnN]["flipAt"]
+   if tType is "valid" then
+      put Entity.Spawn("Rain.Valid", sRnTok[sRnN]["x"], kT, kZ, "cyan") into sRnTok[sRnN]["id"]
+   else
+      put Entity.Spawn("Rain.Nonsense", sRnTok[sRnN]["x"], kT, kZ, "#B060FF") into sRnTok[sRnN]["id"]
+   end if
+end Rain.Spawn
+
+on Rain.Reparse i
+   put empty into sRnTok[i]["flipAt"]
+   put 12 into sRnTok[i]["tell"]
+   Entity.SetColor sRnTok[i]["id"], "white"
+end Rain.Reparse
+
+on Rain.Flip i
+   if sRnTok[i]["type"] is "valid" then
+      put "nonsense" into sRnTok[i]["type"]
+      Entity.SetMesh sRnTok[i]["id"], "Rain.Nonsense"
+      Entity.SetColor sRnTok[i]["id"], "#B060FF"
+   else
+      put "valid" into sRnTok[i]["type"]
+      Entity.SetMesh sRnTok[i]["id"], "Rain.Valid"
+      Entity.SetColor sRnTok[i]["id"], "cyan"
+   end if
+end Rain.Flip
+
+on Rain.Catch i
+   if sRnTok[i]["type"] is "valid" then
+      add 1 to sRnCaught
+      FX.Sparks sRnTok[i]["x"], sRnTok[i]["y"], kZ, 8, "cyan"
+   else
+      subtract 1 from sRnLives
+      FX.Sparks sRnTok[i]["x"], sRnTok[i]["y"], kZ, 14, "red"
+   end if
+   Rain.Drop i
+end Rain.Catch
+
+-- remove token i: the last one takes its place
+on Rain.Drop i
+   Entity.Kill sRnTok[i]["id"]
+   if i < sRnN then put sRnTok[sRnN] into sRnTok[i]
+   delete variable sRnTok[sRnN]
+   subtract 1 from sRnN
+end Rain.Drop
+
+function Rain.State
+   return sRnState && sRnCaught && sRnLives && sRnN
+end Rain.State
+
+-- test help: where the lowest valid token is (empty when none)
+function Rain.Aim
+   local i, tBestY, tX
+   put -9999 into tBestY
+   repeat with i = 1 to sRnN
+      if sRnTok[i]["type"] is "valid" and sRnTok[i]["y"] > tBestY then
+         put sRnTok[i]["y"] into tBestY
+         put sRnTok[i]["x"] into tX
+      end if
+   end repeat
+   return tX
+end Rain.Aim
+
+function Rain.Px
+   return sRnPX
+end Rain.Px
+
+-- test help: "type,x,y" a line each
+function Rain.Tokens
+   local i, tOut
+   repeat with i = 1 to sRnN
+      put sRnTok[i]["type"] & "," & round(sRnTok[i]["x"]) & "," & round(sRnTok[i]["y"]) & cr after tOut
+   end repeat
+   return tOut
+end Rain.Tokens

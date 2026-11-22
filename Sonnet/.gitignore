@@ -1,1 +1,4 @@
+# this folder is code and notes: keep them (the parent repo keeps only READMEs)
+!*
 __pycache__/
+*.pyc

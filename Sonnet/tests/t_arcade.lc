@@ -1,0 +1,25 @@
+local i, tN
+repeat with i = 1 to 5
+   T.Tap 48 + i
+   repeat 30 times
+      T.Step "0"
+   end repeat
+   put "game" && i & ": " & T.Call("Arcade.State") & " | ents " & Stub.Count() & cr after tLog
+   T.Tap "109"
+   put "  back: " & T.Call("Arcade.State") & " | ents " & Stub.Count() & cr after tLog
+end repeat
+-- menu keys
+T.Tap "65364"
+T.Tap "65364"
+put "after two downs: " & T.Call("Arcade.State") & cr after tLog
+T.Tap "32"
+put "after space: " & T.Call("Arcade.State") & cr after tLog
+T.Tap "109"
+-- wins unlock sonnet lines
+T.Do "Arc.Won", 1
+T.Do "Arc.Won", 5
+T.Step "0"
+put "won count " & T.Call("Arcade.WonCount") & cr after tLog
+put "line 1: " & Stub.Hud("Arc.Son1") & cr & "line 3: " & Stub.Hud("Arc.Son3") & cr & "line 4 (hidden): [" & Stub.Hud("Arc.Son4") & "]" & cr & "line 14: " & Stub.Hud("Arc.Son14") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & cr after tLog
+return tLog

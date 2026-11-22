@@ -1,0 +1,10 @@
+local i, tState
+T.Do "Arc.Seed", 5
+repeat with i = 1 to 6000
+   T.Step "0"
+   put word 1 of T.Call("Rain.State") into tState
+   if tState is not "play" then exit repeat
+end repeat
+put "idle ended after" && i && "steps: " & T.Call("Rain.State") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & " ents: " & Stub.Count() & cr after tLog
+return tLog

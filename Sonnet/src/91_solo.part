@@ -1,0 +1,42 @@
+-- standalone card: one game, no menu. M leaves (Game.Exit); the game's own Space restarts it.
+on Game.OnStart
+   Arc.Clean
+   send "@@PRE@@.Start" to me
+end Game.OnStart
+
+on Game.OnUpdate
+   Arc.Begin
+   if Arc.Pressed(109) then
+      Game.Exit
+   else
+      send "@@PRE@@.Step" to me
+   end if
+   Arc.End
+end Game.OnUpdate
+
+on Arc.Won pN
+end Arc.Won
+
+function Solo.State
+   dispatch function "@@PRE@@.State" to me
+   return the result
+end Solo.State
+
+on Game.OnPause
+end Game.OnPause
+
+on Game.OnResume
+end Game.OnResume
+
+on Game.OnStop
+   HUD.Clear
+end Game.OnStop
+
+on Game.OnClick pX, pY, pButton
+end Game.OnClick
+
+on Game.OnKill pKey, pX, pY, pZ
+end Game.OnKill
+
+on Collision.Hit pA, pB
+end Collision.Hit

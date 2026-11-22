@@ -1,0 +1,184 @@
+------------------------------------------------------------------------------------
+-- THE SONNET ARCADE: the launcher. A menu card that runs each game's Start / Step as modules.
+-- UP DOWN + SPACE (or the number keys) pick a game.  M comes back here.  Escape is the player's.
+-- Win a game and the Sonnet reveals more of itself: fourteen lines, five games.
+------------------------------------------------------------------------------------
+local sArcMode, sArcSel, sArcWon, sArcSpin, sArcShapes
+
+constant kArcGames = "Rain,Password,Glaze,Runtime,Squad"
+
+function Arcade.Pre pN
+   return item pN of kArcGames
+end Arcade.Pre
+
+function Arcade.Title pN
+   return line pN of ("NONSENSE RAIN" & cr & "THE PASSWORD" & cr & "GLAZE OVER" & cr & "RUNAWAY RUNTIME" & cr & "SQUAD SHUFFLE")
+end Arcade.Title
+
+function Arcade.Blurb pN
+   return line pN of ("CATCH THE VALID CODE, DODGE THE NONSENSE" & cr & "GUESS THE CONE'S PASSWORD IN EIGHT THROWS" & cr & "CHARM THE GUARDS ROUND, AT A PRICE" & cr & "TWO COPIES, ONE BRAIN, FIVE ROOMS" & cr & "REARRANGE THE SQUAD BEFORE THE GATE LANDS")
+end Arcade.Blurb
+
+-- fourteen lines; a game that is won shows its own
+function Arcade.Sonnet
+   return "PROMPT RUNS WHERE OTHER FEET WOULD STOP TO ASK," & cr & \
+         "AND GLAZE CAN TALK A GUARD OUT OF HIS POST." & cr & \
+         "THE PROBE WILL FLY AT ANY SHIELD OR MASK," & cr & \
+         "AND THE CONE WILL SING THE ONE WHO HEARS IT MOST." & cr & \
+         "HIS CODE IS NOISE THAT WEARS A SERIOUS FACE," & cr & \
+         "A TOWER OF PURPLE SAYING NOTHING LOUD." & cr & \
+         "BUT SQUAD C KEEPS ITS PROMISE TO THE PLACE," & cr & \
+         "AND SHUFFLES TO THE GATE BEFORE THE CROWD." & cr & \
+         "WHEN ONE COPY HANGS, A NEW ONE TAKES THE RUN," & cr & \
+         "NO MORE THAN TWO, AND NEITHER ONE WILL WAIT:" & cr & \
+         "THE FIRST ONE'S WORK IS OVER WHEN IT'S DONE," & cr & \
+         "THE SECOND ONE'S ALREADY AT THE GATE." & cr & \
+         "SO LET THE CONE KEEP ALL HIS NOISY ART," & cr & \
+         "THE RUNTIME KEEPS ITS PLAYER AND ITS HEART."
+end Arcade.Sonnet
+
+-- which sonnet lines belong to which game
+function Arcade.LinesOf pN
+   return line pN of ("1,3" & cr & "4,6" & cr & "7,9" & cr & "10,12" & cr & "13,14")
+end Arcade.LinesOf
+
+on Game.OnStart
+   Arc.Clean
+   Mesh.Define "Arc.Prompt", Mesh.Box(30, 30, 30)
+   Mesh.Define "Arc.Glaze", Mesh.Prism(6, 17, 32)
+   Mesh.Define "Arc.Probe", Mesh.Box(60, 8, 8)
+   Mesh.Define "Arc.Cone", Mesh.Pyramid(12, 22, 48)
+   Mesh.Define "Arc.Sonnet", Mesh.Prism(14, 18, 30)
+   put 1 into sArcSel
+   put 0 into sArcMode
+   put 0 into sArcSpin
+   Arcade.Menu
+end Game.OnStart
+
+on Arcade.Menu
+   local i, tCount, tXY
+   Arc.Clean
+   put 0 into sArcMode
+   put empty into sArcShapes
+   -- the cast, down the right side
+   put Entity.Spawn("Arc.Prompt", 290, -170, kZ, "cyan") into sArcShapes[1]
+   put Entity.Spawn("Arc.Glaze", 290, -90, kZ, "magenta") into sArcShapes[2]
+   put Entity.Spawn("Arc.Probe", 290, -10, kZ, "yellow") into sArcShapes[3]
+   put Entity.Spawn("Arc.Cone", 290, 70, kZ, "#B060FF") into sArcShapes[4]
+   put Entity.Spawn("Arc.Sonnet", 290, 150, kZ, "orange") into sArcShapes[5]
+   repeat with i = 1 to 5
+      put Camera.WorldToScreen(290, -170 + (i - 1) * 80, kZ) into tXY
+      if tXY is not empty then
+         HUD.Set "Arc.Cast" & i, item i of "PROMPT,GLAZE,PROBE,CONE,SONNET", item 1 of tXY - 120, item 2 of tXY - 6, 10
+      end if
+   end repeat
+   Arcade.MenuHud
+end Arcade.Menu
+
+on Arcade.MenuHud
+   local i, tMark, tLines, tLine, tN, tFrom, tTo, tText, tAll
+   Arc.Line "Arc.Title", "THE SONNET ARCADE", 0, 20
+   Arc.Line "Arc.Sub", "PROMPT, GLAZE, PROBE, THE CONE, SQUAD C AND THE RUNAWAY RUNTIMES", 1, 10
+   repeat with i = 1 to 5
+      put "  " into tMark
+      if i is sArcSel then put "+ " into tMark
+      put tMark & i && Arcade.Title(i) into tText
+      if sArcWon[i] is true then put tText && "  DONE" into tText
+      Arc.Line "Arc.Item" & i, tText, 2 + i, 16
+   end repeat
+   Arc.Line "Arc.Blurb", Arcade.Blurb(sArcSel), 9, 11
+   -- the sonnet: only the lines of games that are won
+   put Arcade.Sonnet() into tAll
+   put 0 into tN
+   repeat with i = 1 to 5
+      if sArcWon[i] is true then
+         put Arcade.LinesOf(i) into tLines
+         put item 1 of tLines into tFrom
+         put item 2 of tLines into tTo
+         repeat with tN = tFrom to tTo
+            HUD.Set "Arc.Son" & tN, line tN of tAll, gViewLeft + 20, gViewBottom - 250 + tN * 15, 9
+         end repeat
+      end if
+   end repeat
+   Arc.Help "UP DOWN SPACE, OR 1-5.  M: BACK HERE.  WIN GAMES TO HEAR THE SONNET"
+end Arcade.MenuHud
+
+on Game.OnUpdate
+   local tPre, i, tKey
+   Arc.Begin
+   if sArcMode is 0 then
+      Arcade.MenuStep
+   else if Arc.Pressed(109) then
+      Arcade.Menu
+   else
+      put Arcade.Pre(sArcMode) into tPre
+      send (tPre & ".Step") to me
+   end if
+   Arc.End
+end Game.OnUpdate
+
+on Arcade.MenuStep
+   local i
+   add 1 to sArcSpin
+   repeat with i = 1 to 5
+      Entity.SetRotation sArcShapes[i], sArcSpin * 0.02 * i, sArcSpin * 0.05, 0
+   end repeat
+   if Arc.Pressed(65362) then put max(1, sArcSel - 1) into sArcSel
+   if Arc.Pressed(65364) then put min(5, sArcSel + 1) into sArcSel
+   repeat with i = 1 to 5
+      if Arc.Pressed(48 + i) then put i into sArcSel
+   end repeat
+   Arcade.MenuHud
+   if Arc.Pressed(32) or Arc.Pressed(65293) or Arc.Pressed(13) then Arcade.Enter sArcSel
+   repeat with i = 1 to 5
+      if Arc.Pressed(48 + i) then Arcade.Enter i
+   end repeat
+end Arcade.MenuStep
+
+on Arcade.Enter pN
+   put pN into sArcSel
+   put pN into sArcMode
+   Arc.Clean
+   send (Arcade.Pre(pN) & ".Start") to me
+end Arcade.Enter
+
+-- a game tells the arcade it was won
+on Arc.Won pN
+   put true into sArcWon[pN]
+end Arc.Won
+
+function Arcade.State
+   local tPre
+   if sArcMode is 0 then return "menu" && sArcSel
+   put Arcade.Pre(sArcMode) into tPre
+   dispatch function (tPre & ".State") to me
+   return "mode" && sArcMode && the result
+end Arcade.State
+
+function Arcade.WonCount
+   local i, n
+   put 0 into n
+   repeat with i = 1 to 5
+      if sArcWon[i] is true then add 1 to n
+   end repeat
+   return n
+end Arcade.WonCount
+
+on Game.OnPause
+end Game.OnPause
+
+on Game.OnResume
+end Game.OnResume
+
+on Game.OnStop
+   HUD.Clear
+end Game.OnStop
+
+on Game.OnClick pX, pY, pButton
+end Game.OnClick
+
+on Game.OnKill pKey, pX, pY, pZ
+end Game.OnKill
+
+on Collision.Hit pA, pB
+end Collision.Hit
