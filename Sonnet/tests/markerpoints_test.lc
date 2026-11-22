@@ -1,0 +1,61 @@
+local tPts, i, t0, tLog, n, tList
+if there is a stack "MkTest" then delete stack "MkTest"
+create stack "MkTest"
+set the rect of stack "MkTest" to 100,100,700,600
+set the defaultStack to "MkTest"
+create graphic "G"
+set the style of graphic "G" to "polygon"
+set the rect of graphic "G" to 0,0,600,500
+set the lineSize of graphic "G" to 0
+set the markerDrawn of graphic "G" to true
+set the markerFilled of graphic "G" to true
+set the markerLineSize of graphic "G" to 1
+set the markerPoints of graphic "G" to "-2,-2" & cr & "2,-2" & cr & "2,2" & cr & "-2,2" & cr & "-2,-2"
+set the foregroundColor of graphic "G" to "0,255,255"
+set the hiliteColor of graphic "G" to "255,255,0"
+set the markerFilled of graphic "G" to true
+show stack "MkTest"
+wait 200 milliseconds with messages
+put "200,1000,3000" into tList
+repeat for each item n in tList
+  put empty into tPts
+  repeat with i = 1 to n
+    put (random(580) & "," & random(480)) & cr after tPts
+  end repeat
+  delete the last char of tPts
+  put the milliseconds into t0
+  repeat 20 times
+    set the points of graphic "G" to tPts
+    wait 0 milliseconds with messages
+  end repeat
+  put n & " dots as marker instances: " & round((the milliseconds - t0) / 20, 1) & " ms per set+redraw" & cr after tLog
+  put the milliseconds into t0
+  lock screen
+  repeat 20 times
+    set the points of graphic "G" to tPts
+  end repeat
+  unlock screen
+  put n & " dots, set only (screen locked): " & round((the milliseconds - t0) / 20, 2) & " ms" & cr after tLog
+end repeat
+-- the same count as separate line objects is what DotMaze does today; one multi-line graphic for comparison
+create graphic "L"
+set the style of graphic "L" to "polygon"
+set the rect of graphic "L" to 0,0,600,500
+set the markerDrawn of graphic "L" to false
+set the lineSize of graphic "L" to 1
+put empty into tPts
+repeat with i = 1 to 1000
+  put random(580) & "," & random(480) & cr & random(580) & "," & random(480) & cr & cr after tPts
+end repeat
+set the points of graphic "L" to tPts
+put the milliseconds into t0
+repeat 20 times
+  set the points of graphic "L" to tPts
+  wait 0 milliseconds with messages
+end repeat
+put "1000 segments as ONE line graphic (blank line between): " & round((the milliseconds - t0) / 20, 1) & " ms per set+redraw; lines " & the number of lines of the points of graphic "L" & cr after tLog
+delete graphic "L"
+set the points of graphic "G" to "100,100" & cr & "200,150" & cr & "300,100" & cr & "400,300"
+export snapshot from card 1 of stack "MkTest" to file "C:/LIB_MCP/mk2.png" as PNG
+delete stack "MkTest"
+return tLog
