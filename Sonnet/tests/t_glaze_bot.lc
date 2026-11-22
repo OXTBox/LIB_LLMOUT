@@ -1,0 +1,26 @@
+local i, tSt, tRing, tNear, tCount, tKeys, tHold
+T.Do "Arc.Seed", 9
+put false into tHold
+repeat with i = 1 to 9000
+   put T.Call("Glaze.State") into tSt
+   put item 5 of (word 1 of tSt & "," & word 2 of tSt & "," & word 3 of tSt & "," & word 4 of tSt & "," & word 5 of tSt) into tRing
+   put T.Call("Glaze.Near") into tNear
+   put T.Call("Glaze.Count") into tCount
+   if tHold then
+      if (tCount >= 1 and (tCount >= 2 or tNear < 100)) or tRing >= 190 or tNear < 30 then
+         put false into tHold
+      end if
+   else
+      if tNear < 220 then
+         put true into tHold
+      end if
+   end if
+   put "0" into tKeys
+   if tHold then put "32" into tKeys
+   T.Step tKeys
+   if word 1 of T.Call("Glaze.State") is not "play" then exit repeat
+end repeat
+put "bot ended after" && i && ": " & T.Call("Glaze.State") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & " ents: " & Stub.Count() & cr after tLog
+put Stub.AllHud() after tLog
+return tLog

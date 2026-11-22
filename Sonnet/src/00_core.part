@@ -1,0 +1,78 @@
+global bPaused, bPlaying, gNoMouse
+global gViewLeft, gViewTop, gViewRight, gViewBottom, CenterX, CenterY
+
+-- the playfield in world units, seen from z = kZ (about one unit a pixel)
+constant kZ = 360
+constant kL = -380
+constant kR = 380
+constant kT = -230
+constant kB = 290
+
+local sArcTest, sArcNow, sArcPrev
+
+-- keys: held now, as key codes (65361 left, 65362 up, 65363 right, 65364 down, 32 space)
+function Arc.Keys
+   if sArcTest is not empty then return sArcTest
+   return the keysDown
+end Arc.Keys
+
+-- a test (or an AI) sets the keys instead of a keyboard: Arc.TestKeys "65361,32"; "0" = none
+on Arc.TestKeys pKeys
+   put pKeys into sArcTest
+end Arc.TestKeys
+
+on Arc.Seed pN
+   set the randomSeed to pN
+end Arc.Seed
+
+on Arc.Begin
+   put Arc.Keys() into sArcNow
+end Arc.Begin
+
+on Arc.End
+   put sArcNow into sArcPrev
+end Arc.End
+
+function Arc.Held pCode
+   return (pCode is among the items of sArcNow)
+end Arc.Held
+
+-- true on the one step a key goes down
+function Arc.Pressed pCode
+   return (pCode is among the items of sArcNow) and not (pCode is among the items of sArcPrev)
+end Arc.Pressed
+
+on Arc.Clean
+   Camera.Reset
+   Scene.ClearAll
+   Particles.Clear
+   HUD.Clear
+   Collision.ClearRules
+end Arc.Clean
+
+on Arc.Again pPre
+   Arc.Clean
+   send (pPre & ".Start") to me
+end Arc.Again
+
+-- a HUD line: pLine 0 is the top line
+on Arc.Line pId, pText, pLine, pSize
+   if pSize is empty then put 14 into pSize
+   HUD.Set pId, pText, gViewLeft + 20, gViewTop + 14 + pLine * 26, pSize
+end Arc.Line
+
+on Arc.Help pText
+   HUD.Set "Arc.Help", pText, gViewLeft + 20, gViewBottom - 30, 11
+end Arc.Help
+
+function Arc.Clamp pV, pLo, pHi
+   return max(pLo, min(pHi, pV))
+end Arc.Clamp
+
+function Arc.Dist pX1, pY1, pX2, pY2
+   return sqrt((pX1 - pX2) ^ 2 + (pY1 - pY2) ^ 2)
+end Arc.Dist
+
+-- no arrow key ever moves the card
+on arrowKey pKey
+end arrowKey

@@ -1,0 +1,129 @@
+local i, k, tS
+T.Do "Runtime.GoLevel", 1
+put "room 1 solution RRRRRR: " into tS
+repeat for each char tC in "RRRRRR"
+   switch tC
+      case "U"
+         T.Tap "65362"
+         break
+      case "D"
+         T.Tap "65364"
+         break
+      case "L"
+         T.Tap "65361"
+         break
+      case "R"
+         T.Tap "65363"
+         break
+      case "S"
+         T.Tap "32"
+         break
+      case "K"
+         T.Tap "120"
+         break
+   end switch
+end repeat
+put tS & T.Call("Runtime.State") & cr after tLog
+T.Do "Runtime.GoLevel", 2
+put "room 2 solution RDDRRRSRRRRR: " into tS
+repeat for each char tC in "RDDRRRSRRRRR"
+   switch tC
+      case "U"
+         T.Tap "65362"
+         break
+      case "D"
+         T.Tap "65364"
+         break
+      case "L"
+         T.Tap "65361"
+         break
+      case "R"
+         T.Tap "65363"
+         break
+      case "S"
+         T.Tap "32"
+         break
+      case "K"
+         T.Tap "120"
+         break
+   end switch
+end repeat
+put tS & T.Call("Runtime.State") & cr after tLog
+T.Do "Runtime.GoLevel", 3
+put "room 3 solution DDRRSRRRRRRR: " into tS
+repeat for each char tC in "DDRRSRRRRRRR"
+   switch tC
+      case "U"
+         T.Tap "65362"
+         break
+      case "D"
+         T.Tap "65364"
+         break
+      case "L"
+         T.Tap "65361"
+         break
+      case "R"
+         T.Tap "65363"
+         break
+      case "S"
+         T.Tap "32"
+         break
+      case "K"
+         T.Tap "120"
+         break
+   end switch
+end repeat
+put tS & T.Call("Runtime.State") & cr after tLog
+T.Do "Runtime.GoLevel", 4
+put "room 4 solution RDDDDRRSRRRRR: " into tS
+repeat for each char tC in "RDDDDRRSRRRRR"
+   switch tC
+      case "U"
+         T.Tap "65362"
+         break
+      case "D"
+         T.Tap "65364"
+         break
+      case "L"
+         T.Tap "65361"
+         break
+      case "R"
+         T.Tap "65363"
+         break
+      case "S"
+         T.Tap "32"
+         break
+      case "K"
+         T.Tap "120"
+         break
+   end switch
+end repeat
+put tS & T.Call("Runtime.State") & cr after tLog
+T.Do "Runtime.GoLevel", 5
+put "room 5 solution RDDDDDRRUUUSRRRRRRRR: " into tS
+repeat for each char tC in "RDDDDDRRUUUSRRRRRRRR"
+   switch tC
+      case "U"
+         T.Tap "65362"
+         break
+      case "D"
+         T.Tap "65364"
+         break
+      case "L"
+         T.Tap "65361"
+         break
+      case "R"
+         T.Tap "65363"
+         break
+      case "S"
+         T.Tap "32"
+         break
+      case "K"
+         T.Tap "120"
+         break
+   end switch
+end repeat
+put tS & T.Call("Runtime.State") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & " ents: " & Stub.Count() & cr after tLog
+put Stub.AllHud() after tLog
+return tLog

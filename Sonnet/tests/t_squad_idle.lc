@@ -1,0 +1,9 @@
+local i
+T.Do "Arc.Seed", 17
+repeat with i = 1 to 6000
+   T.Step "0"
+   if word 1 of T.Call("Squad.State") is not "play" then exit repeat
+end repeat
+put "idle ended after" && i && ": " & T.Call("Squad.State") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & cr after tLog
+return tLog

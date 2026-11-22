@@ -1,0 +1,45 @@
+local i, tNext, tState, tTok, tPX, tTarget, tKeys, tLine, tT, tX, tY, tDanger, tBestY
+T.Do "Arc.Seed", 11
+repeat with i = 1 to 9000
+   put T.Call("Rain.Px") into tPX
+   put empty into tTarget
+   put -9999 into tBestY
+   put 0 into tDanger
+   repeat for each line tLine in T.Call("Rain.Tokens")
+      put item 1 of tLine into tT
+      put item 2 of tLine into tX
+      put item 3 of tLine into tY
+      if tT is "valid" and tY > tBestY and tY < 230 then
+         put tY into tBestY
+         put tX into tTarget
+      end if
+   end repeat
+   -- steer to the target, but never step under a cone that is close above
+   put "0" into tKeys
+   if tTarget is not empty then
+      if tTarget > tPX + 8 then put "65363" into tKeys
+      if tTarget < tPX - 8 then put "65361" into tKeys
+   end if
+   put tPX into tNext
+   if tKeys is "65363" then put tPX + 9 into tNext
+   if tKeys is "65361" then put tPX - 9 into tNext
+   repeat for each line tLine in T.Call("Rain.Tokens")
+      if item 1 of tLine is "nonsense" and item 3 of tLine > 80 and item 3 of tLine < 270 then
+         if abs(item 2 of tLine - tNext) < 62 then
+            -- sidestep away from the cone
+            if item 2 of tLine > tPX then
+               put "65361" into tKeys
+            else
+               put "65363" into tKeys
+            end if
+         end if
+      end if
+   end repeat
+   T.Step tKeys
+   put word 1 of T.Call("Rain.State") into tState
+   if tState is not "play" then exit repeat
+end repeat
+put "bot ended after" && i && "steps: " & T.Call("Rain.State") & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & " ents: " & Stub.Count() & cr after tLog
+put Stub.AllHud() after tLog
+return tLog

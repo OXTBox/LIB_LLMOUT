@@ -1,0 +1,20 @@
+local i, tNeed, tForm, tPlan, tMove, tMaxPlan
+T.Do "Arc.Seed", 17
+put 0 into tMaxPlan
+repeat with i = 1 to 6000
+   put T.Call("Squad.Need") into tNeed
+   put T.Call("Squad.Form") into tForm
+   if tNeed is not empty and tNeed is not tForm then
+      put T.Plan(tForm, tNeed) into tPlan
+      put max(tMaxPlan, length(tPlan)) into tMaxPlan
+      put char 1 of tPlan into tMove
+      T.Tap T.Key(tMove)
+   else
+      T.Step "0"
+   end if
+   if word 1 of T.Call("Squad.State") is not "play" then exit repeat
+end repeat
+put "bot ended after" && i && ": " & T.Call("Squad.State") & " longest plan " & tMaxPlan & cr after tLog
+put "bad: " & Stub.Bad() & " badhud: " & Stub.BadHud() & " ents: " & Stub.Count() & cr after tLog
+put Stub.AllHud() after tLog
+return tLog

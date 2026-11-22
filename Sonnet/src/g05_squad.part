@@ -1,0 +1,209 @@
+------------------------------------------------------------------------------------
+-- 5  SQUAD SHUFFLE  (Squad C)   rung 6: a permutation in real time
+-- Three soldiers ride in three lanes: SCOUT (cyan pyramid), GUNNER (red box), MEDIC (green
+-- prism). Gates come down the lanes; each lane shows the shape of soldier it needs. When a
+-- gate lands, every lane whose soldier is the wrong shape costs the squad a heart.
+-- LEFT / RIGHT rotate the squad, UP swaps lanes 1 and 2, DOWN swaps lanes 2 and 3.
+-- From wave 8 the Cone re-parses gates: they flash white and two lanes swap their needs.
+-- Clear 16 gates with the squad alive.   (The soldier roles are an invention of the author.)
+------------------------------------------------------------------------------------
+local sSqForm, sSqSol, sSqX, sSqGates, sSqN, sSqHP, sSqDone, sSqTicks, sSqClock, sSqState, sSqMsg, sSqPerfect
+constant kSqNeed = 16
+constant kSqLineY = 245
+
+on Squad.Start
+   local i
+   Mesh.Define "Sq.A", Mesh.Pyramid(4, 16, 32)
+   Mesh.Define "Sq.B", Mesh.Box(26, 26, 26)
+   Mesh.Define "Sq.C", Mesh.Prism(6, 15, 28)
+   Mesh.Define "Sq.Bar", Mesh.Box(380, 3, 3)
+   Mesh.Define "Sq.Line", Mesh.Box(380, 2, 2)
+   put "ABC" into sSqForm
+   put empty into sSqSol
+   repeat with i = 1 to 3
+      put Squad.LaneX(i) into sSqX[i]
+      put Entity.Spawn("Sq." & char i of "ABC", sSqX[i], kSqLineY, kZ, item i of "cyan,red,green") into sSqSol[i]
+   end repeat
+   get Entity.Spawn("Sq.Line", 0, kSqLineY + 30, kZ, "#555555")
+   put empty into sSqGates
+   put 0 into sSqN
+   put 6 into sSqHP
+   put 0 into sSqDone
+   put 0 into sSqTicks
+   put 60 into sSqClock
+   put 0 into sSqPerfect
+   put "play" into sSqState
+   put empty into sSqMsg
+   Squad.Hud
+end Squad.Start
+
+function Squad.LaneX pLane
+   return (pLane - 2) * 120
+end Squad.LaneX
+
+on Squad.Hud
+   Arc.Line "Sq.Title", "SQUAD SHUFFLE", 0, 18
+   Arc.Line "Sq.Score", "GATES" && sSqDone & "/" & kSqNeed && "  HEARTS" && sSqHP && "  PERFECT" && sSqPerfect, 1, 14
+   Arc.Line "Sq.Msg", sSqMsg, 2, 14
+   Arc.Help "LEFT RIGHT: ROTATE.  UP: SWAP 1-2.  DOWN: SWAP 2-3.  M: MENU"
+end Squad.Hud
+
+on Squad.Step
+   local i, tSpeed, tG
+   if sSqState is not "play" then
+      if Arc.Pressed(32) then Arc.Again "Squad"
+      exit Squad.Step
+   end if
+   add 1 to sSqTicks
+   -- the formation
+   if Arc.Pressed(65361) then put (char 2 to 3 of sSqForm) & char 1 of sSqForm into sSqForm
+   if Arc.Pressed(65363) then put (char 3 of sSqForm) & char 1 to 2 of sSqForm into sSqForm
+   if Arc.Pressed(65362) then put (char 2 of sSqForm) & (char 1 of sSqForm) & char 3 of sSqForm into sSqForm
+   if Arc.Pressed(65364) then put (char 1 of sSqForm) & (char 3 of sSqForm) & char 2 of sSqForm into sSqForm
+   -- soldiers slide to their lanes: the entity of each shape follows the lane it is in
+   repeat with i = 1 to 3
+      put offset(char i of "ABC", sSqForm) into tG
+      put Squad.Slide(sSqX[i], Squad.LaneX(tG)) into sSqX[i]
+      Entity.SetPosition sSqSol[i], sSqX[i], kSqLineY, kZ
+      Entity.SetRotation sSqSol[i], 0, sSqTicks * 0.05, 0
+   end repeat
+   -- a new gate when the last has come far enough
+   add 1 to sSqClock
+   if sSqClock >= max(70, 130 - sSqDone * 4) and sSqDone + sSqN < kSqNeed then
+      put 0 into sSqClock
+      Squad.Spawn
+   end if
+   put 3.2 + sSqDone * 0.18 into tSpeed
+   repeat with i = sSqN down to 1
+      add tSpeed to sSqGates[i]["y"]
+      Squad.PlaceGate i
+      -- the Cone re-parses a gate on its way down (from wave 8)
+      if sSqGates[i]["re"] is true and sSqGates[i]["tell"] is 0 and sSqGates[i]["y"] > 20 then
+         put 14 into sSqGates[i]["tell"]
+         Squad.Tint i, "white"
+      end if
+      if sSqGates[i]["tell"] > 0 then
+         subtract 1 from sSqGates[i]["tell"]
+         if sSqGates[i]["tell"] is 1 then Squad.Reparse i
+      end if
+      if sSqGates[i]["y"] >= kSqLineY - 10 then Squad.Land i
+   end repeat
+   if sSqHP <= 0 then
+      put "THE SQUAD IS DOWN.  SPACE TO TRY AGAIN" into sSqMsg
+      put "lost" into sSqState
+   else if sSqDone >= kSqNeed then
+      put "THE ROAD IS CLEAR.  SPACE TO RIDE AGAIN" into sSqMsg
+      put "won" into sSqState
+      Arc.Won 5
+   end if
+   Squad.Hud
+end Squad.Step
+
+function Squad.Slide pFrom, pTo
+   if abs(pTo - pFrom) <= 26 then return pTo
+   if pTo > pFrom then return pFrom + 26
+   return pFrom - 26
+end Squad.Slide
+
+-- a gate needs a permutation of A B C
+on Squad.Spawn
+   local tReq, tPick, i
+   put item random(6) of "ABC,ACB,BAC,BCA,CAB,CBA" into tReq
+   add 1 to sSqN
+   put empty into sSqGates[sSqN]
+   put tReq into sSqGates[sSqN]["req"]
+   put kT into sSqGates[sSqN]["y"]
+   put 0 into sSqGates[sSqN]["tell"]
+   put false into sSqGates[sSqN]["re"]
+   if sSqDone >= 7 and random(100) <= 55 then put true into sSqGates[sSqN]["re"]
+   put empty into sSqGates[sSqN]["ids"]
+   repeat with i = 1 to 3
+      put Entity.Spawn("Sq." & char i of tReq, Squad.LaneX(i), kT, kZ, "white") into sSqGates[sSqN]["ids"][i]
+   end repeat
+   put Entity.Spawn("Sq.Bar", 0, kT + 24, kZ, "#888888") into sSqGates[sSqN]["ids"][4]
+   Squad.Tint sSqN, "#CCCCCC"
+end Squad.Spawn
+
+on Squad.PlaceGate i
+   local k
+   repeat with k = 1 to 3
+      Entity.SetPosition sSqGates[i]["ids"][k], Squad.LaneX(k), sSqGates[i]["y"], kZ
+   end repeat
+   Entity.SetPosition sSqGates[i]["ids"][4], 0, sSqGates[i]["y"] + 24, kZ
+end Squad.PlaceGate
+
+on Squad.Tint i, pColor
+   local k
+   repeat with k = 1 to 3
+      Entity.SetColor sSqGates[i]["ids"][k], pColor
+   end repeat
+end Squad.Tint
+
+-- two lanes of this gate swap their needs
+on Squad.Reparse i
+   local tReq, a, b, tA
+   put sSqGates[i]["req"] into tReq
+   put random(3) into a
+   put (a mod 3) + 1 into b
+   put char a of tReq into tA
+   put char b of tReq into char a of tReq
+   put tA into char b of tReq
+   put tReq into sSqGates[i]["req"]
+   repeat with a = 1 to 3
+      Entity.SetMesh sSqGates[i]["ids"][a], "Sq." & char a of tReq
+   end repeat
+   put -1 into sSqGates[i]["tell"]
+   Squad.Tint i, "#CCCCCC"
+end Squad.Reparse
+
+-- the gate reaches the squad: compare lane by lane
+on Squad.Land i
+   local k, tMiss, tReq
+   put sSqGates[i]["req"] into tReq
+   put 0 into tMiss
+   repeat with k = 1 to 3
+      if char k of sSqForm is not char k of tReq then add 1 to tMiss
+   end repeat
+   subtract tMiss from sSqHP
+   add 1 to sSqDone
+   if tMiss is 0 then
+      add 1 to sSqPerfect
+      put "PERFECT" into sSqMsg
+      FX.Sparks 0, kSqLineY, kZ, 10, "green"
+   else
+      put tMiss && "WRONG" into sSqMsg
+      FX.Sparks 0, kSqLineY, kZ, 12, "red"
+   end if
+   Squad.RemoveGate i
+end Squad.Land
+
+on Squad.RemoveGate i
+   local k
+   repeat with k = 1 to 4
+      Entity.Kill sSqGates[i]["ids"][k]
+   end repeat
+   if i < sSqN then put sSqGates[sSqN] into sSqGates[i]
+   delete variable sSqGates[sSqN]
+   subtract 1 from sSqN
+end Squad.RemoveGate
+
+function Squad.State
+   return sSqState && sSqDone && sSqHP && sSqN && sSqForm
+end Squad.State
+
+-- test help: the formation, and the lowest gate's need (empty when no gate)
+function Squad.Form
+   return sSqForm
+end Squad.Form
+
+function Squad.Need
+   local i, tBest, tReq
+   put -9999 into tBest
+   repeat with i = 1 to sSqN
+      if sSqGates[i]["y"] > tBest then
+         put sSqGates[i]["y"] into tBest
+         put sSqGates[i]["req"] into tReq
+      end if
+   end repeat
+   return tReq
+end Squad.Need
